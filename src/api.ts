@@ -5,10 +5,11 @@ import {
     GetObjectCommand,
     PutObjectCommand,
 } from "@aws-sdk/client-s3";
+import { APIGatewayProxyEvent, APIGatewayProxyResult, Handler } from "aws-lambda";
 
 const s3 = new S3Client({});
 
-export async function uploadUrl() {
+export const uploadUrl: Handler<APIGatewayProxyEvent, APIGatewayProxyResult> = async () => {
     const id = crypto.randomUUID();
 
     const command = new PutObjectCommand({
@@ -24,14 +25,7 @@ export async function uploadUrl() {
     };
 }
 
-interface UploadRequest {
-    body: Buffer;
-    headers: {
-        [key: string]: string;
-    };
-}
-
-export async function upload(event: UploadRequest) {
+export const upload: Handler<APIGatewayProxyEvent, APIGatewayProxyResult> = async (event) => {
     const id = crypto.randomUUID();
 
     const params = {
@@ -58,13 +52,7 @@ export async function upload(event: UploadRequest) {
     }
 }
 
-interface GetByIdRequest {
-    pathParameters: {
-        id: string
-    }
-}
-
-export async function getById(event: GetByIdRequest) {
+export const getById: Handler<APIGatewayProxyEvent, APIGatewayProxyResult> = async (event) => {
     const { id } = event.pathParameters;
     const command = new GetObjectCommand({
         Bucket: Resource.BucketConverteAudiosInputTeste.name,
@@ -75,6 +63,7 @@ export async function getById(event: GetByIdRequest) {
         statusCode: 302,
         headers: {
             Location: await getSignedUrl(s3, command),
-        }
+        },
+        body: ""
     }
 }
