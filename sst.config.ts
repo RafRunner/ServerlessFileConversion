@@ -26,22 +26,26 @@ export default $config({
       }
     });
 
-    // Returns a signed URL the allows for the upload of files via a PUT request
     api.route("GET /", {
       link: [inputBucket],
       handler: "src/api.uploadUrl",
+      description: "Returns a signed URL the allows for the upload of files via a PUT request"
     });
 
-    // Directly uploads a file
+    // It is not recommended to upload directly to a Lambda function, since it is more expensive (you pay for processing),
+    // slower, and limited to 6 MB. You need to correctly supply Content-Type headers and it is sent in base64, which is
+    // very inefficient. SST seems to have a bug, at least in dev mode, where big files result in a 500 error thrown in
+    // library code. The main advantage of this is making validations before writing to s3.
     api.route("PUT /", {
       link: [inputBucket],
       handler: "src/api.upload",
+      description: "Directly uploads a file"
     });
 
-    // Redirects to a signed URL to download a file by id. If it doesn't exist, s3 will return a 404
     api.route("GET /{id}", {
       link: [inputBucket],
       handler: "src/api.getById",
+      description: "Redirects to a signed URL to download a file by id. If it doesn't exist, s3 will return a 404"
     });
   },
 });
