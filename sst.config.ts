@@ -10,26 +10,30 @@ export default $config({
   },
   async run() {
     const inputBucket = new sst.aws.Bucket(`BucketConverteAudiosInputTeste`, {
-      public: true
-    })
+      public: true,
+    });
+
+    const outputBucket = new sst.aws.Bucket(`BucketConverteAudiosOutputTeste`, {
+      public: true,
+    });
 
     const api = new sst.aws.ApiGatewayV2("ApiUploadAudiosTeste", {
       transform: {
         route: {
           handler: {
-            timeout: "5 seconds"
-          }
-        }
+            timeout: "5 seconds",
+          },
+        },
       },
       accessLog: {
-        retention: "3 months"
-      }
+        retention: "3 months",
+      },
     });
 
     api.route("GET /", {
       link: [inputBucket],
       handler: "src/api.uploadUrl",
-      description: "Returns a signed URL the allows for the upload of files via a PUT request"
+      description: "Returns a signed URL the allows for the upload of files via a PUT request",
     });
 
     // It is not recommended to upload directly to a Lambda function, since it is more expensive (you pay for processing),
@@ -39,13 +43,26 @@ export default $config({
     api.route("PUT /", {
       link: [inputBucket],
       handler: "src/api.upload",
-      description: "Directly uploads a file"
+      description: "Directly uploads a file",
     });
 
     api.route("GET /{id}", {
-      link: [inputBucket],
+      link: [outputBucket],
       handler: "src/api.getById",
-      description: "Redirects to a signed URL to download a file by id. If it doesn't exist, s3 will return a 404"
+      description: "Redirects to a signed URL to download a file by id. If it doesn't exist, s3 will return a 404",
     });
+
+    inputBucket.subscribe(
+      {
+        handler: "src/fileConversion.convertToWebm",
+        link: [inputBucket, outputBucket],
+        nodejs: {
+          install: ["ffmpeg-static"],
+        },
+      },
+      {
+        events: ["s3:ObjectCreated:*"],
+      }
+    );
   },
 });

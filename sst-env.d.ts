@@ -11,6 +11,10 @@ declare module "sst" {
       name: string
       type: "sst.aws.Bucket"
     }
+    BucketConverteAudiosOutputTeste: {
+      name: string
+      type: "sst.aws.Bucket"
+    }
   }
 }
 export {}

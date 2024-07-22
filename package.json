@@ -12,6 +12,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.614.0",
     "@aws-sdk/s3-request-presigner": "^3.614.0",
+    "ffmpeg-static": "^5.2.0",
     "file-type": "^19.2.0",
     "sst": "ion"
   },
