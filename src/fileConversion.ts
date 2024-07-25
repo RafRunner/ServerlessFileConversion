@@ -8,6 +8,7 @@ import { exec } from "child_process";
 import * as ffmpeg from "ffmpeg-static";
 import { Resource } from "sst";
 import { APIGatewayProxyResult, S3Event } from "aws-lambda";
+import { promisify } from "node:util";
 
 const s3 = new S3Client({});
 
@@ -37,30 +38,21 @@ export const convertToWebm = async (event: S3Event): Promise<APIGatewayProxyResu
     }
 
     if (!checkIfMP3(await fileTypeFromFile(tempInputPath))) {
-      console.log("Not an mp3, not doing anything");
-      //   console.log("Not an mp3, deleting");
-      //   const commandDelete = new DeleteObjectCommand({
-      //     Bucket: bucketName,
-      //     Key: objectKey,
-      //   });
-      //   await s3.send(commandDelete);
+        console.log("Not an mp3, deleting");
+        const commandDelete = new DeleteObjectCommand({
+          Bucket: bucketName,
+          Key: objectKey,
+        });
+        await s3.send(commandDelete);
 
       return {
         statusCode: 200,
-        body: JSON.stringify({ message: "File was not an mp3" }),
+        body: JSON.stringify({ message: "File was not an mp3. Deleted" }),
       };
     }
 
-    await new Promise((resolve, reject) => {
-      exec(`${ffmpegPath} -i ${tempInputPath} -c:a libopus ${tempOutputPath}`, (error, stdout) => {
-        if (error) {
-          reject(error);
-        } else {
-          console.log("Conversion successful", stdout);
-          resolve(undefined);
-        }
-      });
-    });
+    const result = await promisify(exec)(`${ffmpegPath} -i ${tempInputPath} -c:a libopus ${tempOutputPath}`);
+    console.log("Conversion successful", result.stdout);
 
     const uploadCommand = new PutObjectCommand({
       Bucket: Resource.BucketConverteAudiosOutputTeste.name,
